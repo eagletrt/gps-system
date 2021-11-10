@@ -1,0 +1,8 @@
+[Unit]
+Description=reading from CAN looking for telemetry messages
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+ExecStart=/path/to/can_listener

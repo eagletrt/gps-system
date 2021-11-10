@@ -1,0 +1,8 @@
+*
+!*.c
+!Makefile
+!*.gitignore
+!*.clang-format
+!*.h
+!*.service
+!*.md
