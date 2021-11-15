@@ -1,22 +1,14 @@
 #ifndef TELEMETRY_GPS_LIBRARY
 #define TELEMETRY_GPS_LIBRARY
 
+#include <stdint.h>
+#include <stdbool.h>
+
 //defines
 
-#define MAX_SIZE 1100
-
-//includes
-
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <stdint.h>
+#define MAX_LENGTH 100
 
 //types
-
-typedef enum {false,true} bool;
 
 typedef struct {
 	float latitude; //2
@@ -58,22 +50,22 @@ typedef struct {
 } gps_t;
 
 //function declaration
-void connect_simulated_GPS();
-void connect_real_GPS();
+void pos2can(float latitude, float longitude);
+void speed2can(uint16_t speed);
+void createLogFiles();
+void connect_GPS();
 void setupGPS();
 void finalizeGPS();
 void readGPS();
-void parseLine(char *line);
-short searchType(char *current);
-bool parseGGA(short index, char *current, bool *stop);
-bool parseVTG(int index, char *current, bool *stop);
-bool parseRMC(int index, char* current, bool* stop);
-bool parseGLL(short index, char* current, bool* stop);
-void printGPS(char* backup);
-float convertDegrees(float angle);
-int convertSpeed(float decimal);
-void createLogFiles();
-void csv_log(float latitude, float longitude, uint16_t speed);
-void exitHandler(int sig);
+static void parseLine(char *line);
+static short searchType(char *current);
+static bool parseGGA(short index, char *current, bool *stop);
+static bool parseVTG(int index, char *current, bool *stop);
+static bool parseRMC(int index, char* current, bool* stop);
+static bool parseGLL(short index, char* current, bool* stop);
+static void printGPS(char* backup);
+static float convertDegrees(float angle);
+static uint16_t convertSpeed(float decimal);
+static void csv_log(float latitude, float longitude, uint16_t speed);
 
 #endif

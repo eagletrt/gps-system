@@ -1,8 +1,12 @@
+#include "Primary.h"
+
 #include <fcntl.h>
+#include <inttypes.h>
 #include <linux/can.h>
 #include <net/if.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -12,20 +16,19 @@
 #define MAX_PATH_LENGTH    100
 #define MAX_DATA_BYTE      8
 #define MAX_ID_BYTE        3
-#define GPS_ID_MESSAGE     "0A0"
-#define GPS_ENABLE_MESSAGE "66010000"
-#define GPS_IDLE_MESSAGE   "66000000"
+#define TLM_ID             "0A0"
+#define TLM_ENABLE_MESSAGE "66010000"
+#define TLM_IDLE_MESSAGE   "66000000"
+#define GPS_COORDS_ID      "6A0"
+#define GPS_SPEED_ID       "6A1"
 
 //path exec
-
-typedef enum { false, true } bool;
-
 int pid = -1;
-char interface_name[50]; //ttyACMn
+char interface_name[50];  //ttyACMn
 
 int main(int argc, char **argv) {
-    char log[MAX_PATH_LENGTH]; //gps log path
-    char gps[MAX_PATH_LENGTH]; //gps script path
+    char log[MAX_PATH_LENGTH];  //gps log path
+    char gps[MAX_PATH_LENGTH];  //gps script path
     if (argc == 2) {
         //search gps_logger on the same folder
         getcwd(gps, sizeof(gps));
@@ -77,14 +80,15 @@ int main(int argc, char **argv) {
                     sprintf(id, "%03X", frame.can_id);
                     id[3] = 0;
 
-                    char message[MAX_DATA_BYTE * 2 + 1];
+                    char buffer[MAX_DATA_BYTE * 2 + 1];
                     for (int i = 0; i < frame.can_dlc; i++) {
-                        sprintf(message + i * 2, "%02X", frame.data[i]);
+                        sprintf(buffer + i * 2, "%02X", frame.data[i]);
                     }
+                    buffer[frame.can_dlc * 2 + 1] = 0;  //string terminator
 
-                    message[frame.can_dlc * 2 + 1] = 0;  //string terminator
+                    //printf("Received message from CAN with ID %s and DATA %s\n", id, buffer);
 
-                    if (strcmp(id, GPS_ID_MESSAGE) == 0 && strcmp(message, GPS_IDLE_MESSAGE) == 0) {
+                    if (strcmp(id, TLM_ID) == 0 && strcmp(buffer, TLM_IDLE_MESSAGE) == 0) {
                         if (count == 1 && pid != -1) {
                             kill(pid, SIGUSR1);
                             while (wait(NULL) > 0)
@@ -92,7 +96,7 @@ int main(int argc, char **argv) {
                             count = 0;
                         }
 
-                    } else if (strcmp(id, GPS_ID_MESSAGE) == 0 && strcmp(message, GPS_ENABLE_MESSAGE) == 0) {
+                    } else if (strcmp(id, TLM_ID) == 0 && strcmp(buffer, TLM_ENABLE_MESSAGE) == 0) {
                         if (count == 0) {
                             count++;
                             int f = fork();
@@ -123,10 +127,32 @@ int main(int argc, char **argv) {
                                 pid = f;
                             }
                         }
+                    } else if (strcmp(id, GPS_COORDS_ID) == 0) { //for test purpose
+                        uint8_t *buffer_primary_gps_coords = (uint8_t *)malloc(sizeof(Primary_GPS_COORDS));
+
+                        buffer_primary_gps_coords = (uint8_t *)&frame.data[0];
+
+                        Primary_GPS_COORDS *primary_gps_coords_d =
+                            (Primary_GPS_COORDS *)malloc(sizeof(Primary_GPS_COORDS));
+                        deserialize_Primary_GPS_COORDS(buffer_primary_gps_coords, primary_gps_coords_d);
+
+                        printf(
+                            "Received lat %f long %f\n",
+                            primary_gps_coords_d->latitude,
+                            primary_gps_coords_d->longitude);
+
+                    } else if (strcmp(id, GPS_SPEED_ID) == 0) { //for test purpose
+                        uint8_t *buffer_primary_gps_speed = (uint8_t *)malloc(sizeof(Primary_GPS_SPEED));
+
+                        buffer_primary_gps_speed = (uint8_t *)&frame.data[0];
+
+                        Primary_GPS_SPEED *primary_gps_speed_d = (Primary_GPS_SPEED *)malloc(sizeof(Primary_GPS_SPEED));
+                        deserialize_Primary_GPS_SPEED(buffer_primary_gps_speed, primary_gps_speed_d);
+
+                        printf("Received speed %" SCNu16 "\n", primary_gps_speed_d->speed);
                     }
                 }
             }
-            sleep(1);
         }
     }
 }
