@@ -1,8 +1,13 @@
+#include "Primary.h"
+#include "utils.h"
+
 #include <fcntl.h>
+#include <inttypes.h>
 #include <linux/can.h>
 #include <net/if.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -12,38 +17,21 @@
 #define MAX_PATH_LENGTH    100
 #define MAX_DATA_BYTE      8
 #define MAX_ID_BYTE        3
-#define GPS_ID_MESSAGE     "0A0"
-#define GPS_ENABLE_MESSAGE "66010000"
-#define GPS_IDLE_MESSAGE   "66000000"
 
 //path exec
-
-typedef enum { false, true } bool;
-
 int pid = -1;
-char interface_name[50]; //ttyACMn
+char interface_name[50];  //ttyACMn
 
 int main(int argc, char **argv) {
-    char log[MAX_PATH_LENGTH]; //gps log path
-    char gps[MAX_PATH_LENGTH]; //gps script path
-    if (argc == 2) {
-        //search gps_logger on the same folder
-        getcwd(gps, sizeof(gps));
-        if (gps == NULL) {
-            perror("Cannot find current working directory");
-            return 10;
-        }
-        strcat(gps, "/gps_logger");
-
-        //log
-
-        strcpy(log, argv[1]);
-
-    } else if (argc == 3) {
+    char log[MAX_PATH_LENGTH];  //gps log path
+    char gps[MAX_PATH_LENGTH];  //gps script path
+    
+    if (argc == 3) {
         strcpy(gps, argv[1]);
         strcpy(log, argv[2]);
     } else {
-        fprintf(stderr, "Usage: ./can_listener [/path/to/gps_logger] </path/to/gps/log/folder>\n");
+        fprintf(stderr, "Usage: ./can_listener </path/to/gps_logger> </path/to/gps/log/folder>\n");
+        return 1;
     }
 
     int count = 0;
@@ -52,10 +40,10 @@ int main(int argc, char **argv) {
 
     if (s < 0) {
         perror("Cannot connect to CAN");
-        return 1;
+        return 2;
     } else {
         struct ifreq ifr;
-        strcpy(ifr.ifr_name, "can0");
+        strcpy(ifr.ifr_name, "can2");
         ioctl(s, SIOCGIFINDEX, &ifr);
 
         struct sockaddr_can addr;
@@ -64,37 +52,27 @@ int main(int argc, char **argv) {
         addr.can_ifindex = ifr.ifr_ifindex;
         if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
             perror("Cannot make binding");
-            return 2;
+            return 3;
         }
 
         int nbytes;
         struct can_frame frame;
+        bool already=false;
 
         while (1) {
             if ((nbytes = read(s, &frame, sizeof(struct can_frame))) > 0) {
                 if (nbytes > 0) {
-                    char id[MAX_ID_BYTE + 1];
-                    sprintf(id, "%03X", frame.can_id);
-                    id[3] = 0;
+                    char buffer[21];
+                    Primary_msgname_from_id(frame.can_id,buffer);
 
-                    char message[MAX_DATA_BYTE * 2 + 1];
-                    for (int i = 0; i < frame.can_dlc; i++) {
-                        sprintf(message + i * 2, "%02X", frame.data[i]);
-                    }
+                    if(strcmp(buffer,"TLM_STATUS")==0){
+                        uint8_t* buffer_primary_tlm_status = (uint8_t*)malloc(sizeof(Primary_TLM_STATUS));
+                        Primary_TLM_STATUS* primary_tlm_status_d = (Primary_TLM_STATUS*)malloc(sizeof(Primary_TLM_STATUS));
+                        deserialize_Primary_TLM_STATUS(buffer_primary_tlm_status, primary_tlm_status_d);
 
-                    message[frame.can_dlc * 2 + 1] = 0;  //string terminator
+                        if(primary_tlm_status_d->tlm_status==Primary_Tlm_Status_ON && !already){
 
-                    if (strcmp(id, GPS_ID_MESSAGE) == 0 && strcmp(message, GPS_IDLE_MESSAGE) == 0) {
-                        if (count == 1 && pid != -1) {
-                            kill(pid, SIGUSR1);
-                            while (wait(NULL) > 0)
-                                ;
-                            count = 0;
-                        }
-
-                    } else if (strcmp(id, GPS_ID_MESSAGE) == 0 && strcmp(message, GPS_ENABLE_MESSAGE) == 0) {
-                        if (count == 0) {
-                            count++;
+                            already=true;
                             int f = fork();
 
                             if (f == 0) {
@@ -107,26 +85,38 @@ int main(int argc, char **argv) {
                                     if (s >= 0) {
                                         found = true;
                                         strcpy(interface_name, interface);
-                                    } else {
-                                        perror("Interface not found");
                                     }
                                 }
 
                                 if (!found) {
                                     perror("Cannot find GPS");
+                                    return 4;
+                                    //shutdown telemetry
                                 } else {
                                     char *args[] = {gps, interface_name, log, NULL};
+                                    printf("%s\n%s\n%s\n", gps, interface_name,log);
                                     execv(gps, args);
                                 }
 
                             } else {
                                 pid = f;
                             }
+                        } else if(primary_tlm_status_d->tlm_status==Primary_Tlm_Status_ON && already){
+                            already=false;
+                            kill(pid, SIGUSR1);
+                            while (wait(NULL) > 0)
+                                ;
                         }
+
+                        free(buffer_primary_tlm_status);
+                        free(primary_tlm_status_d);
+
                     }
                 }
             }
-            sleep(1);
         }
     }
+
+    return 0;
+
 }

@@ -2,62 +2,38 @@
 
 GPS parser which read raw GPS messages, selects only the valid ones and sends them to CAN bus
 
+##### :warning: Remeber to provide absolute paths as arguments
+
 ## Compiling
-### GPS Logger
+In order to compile it you can just use `cmake` suite
 
-`gps_logger` works both with a real GPS connected via USB and with GPS simulator of [Eagle-CLI](https://github.com/eagletrt/eagle-cli) 
+Firstly, execute `cmake .` in the root of this project and then you can call `make` to compile everything with the generated `Makefile`
 
-In order to compile it you can just do
-
-```gcc gps_logger.c -O3 -lm -o gps_logger``` 
-
-The genereted executable works with the real GPS, but if you want to test the GPS with the simulator you should use the TEST flag 
-
-```gcc gps_logger.c -O3 -lm -D TEST -o gps_logger```
-
-Keep `gpslib.h` in the same folder of the `gps_logger`
-
-### CAN Listener
-
-In order to start and stop the GPS logger when needed, there is `can-listener` which looks for the starting/ending CAN messages sent to the telemetry, so it is easier to find the desired data later, based on timestamp of the execution
-
-In order to compile it you can just do
-
-```gcc can_listener.c -o can_listener```
-
-### Makefile
-
-You can also just use `make` command to compile the source files (only working with the real GPS compilation for now)
+If you want to delete the binaries you can just use the `make clean` command
 
 ## Executing
 
 ### GPS Logger
 
-To execute it you should also provide the port where it is connected and the path to the folder where you want to save the logs
+To execute it you should also provide the port where the GPS is connected and the path to the folder where you want to save the logs
 
-If you are using the real GPS the port should be `/dev/ttyACM0`, but after some plugs and unplugs the number could change since it is a serial port
+Usally, the GPS path is `/dev/ttyACM0`, but after some plugs and unplugs the number could change since it is a serial port
 
-```./gps_logger /dev/ttyACM0 /path/to/gps/log/folder```  also port
-
-If you are simulating the GPS the port should be `/dev/pts/n`, where `n` is a number
-
-```./gps_logger /dev/pts/n /path/to/gps/log/folder```
+Example:
+```./gps_logger /dev/ttyACM0 /home/ubuntu/gps_logger/logs``` 
 
 ### CAN Listener
 
-When you execute this script you can also provide a different path of the GPS Logger, otherwise it supposed to be in the same folder and it searches for it there
+When you execute this script you should provide the path of the GPS Logger and also the folder where the logs would be saved.
 
-Moreover you need to define the folder where the GPS Logger would save its data
-
-```./can_listener /path/to/gps/log/folder```
-
-```./can_listener /path/to/gps_logger /path/to/gps/log/folder```
+Example:
+```./can_listener /dev/ttyACM0 /home/ubuntu/gps_logger/logs``` 
 
 ## Systemd service for CAN Listener
 
-You can also use a service to keep the CAN Listener executing, searching for the activation/idle service. Remember to edit the `ExecStart` option providing `can_listener` path
+You can also use a service to keep the CAN Listener executing, searching for the activation or idle message, just move it to `/etc/systemd/system` folder, then start it and make it executes on startup if you want
 
 ## TODO
-- [x] Format and upload the code
-- [x] Pass the log paths
+- [ ] Check actual service on telemetry Pi 
+- [ ] Upload changes on telemetry Pi 
 - [ ] Print informations on the screen
