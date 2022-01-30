@@ -20,14 +20,14 @@ To execute it you should also provide the port where the GPS is connected and th
 Usally, the GPS path is `/dev/ttyACM0`, but after some plugs and unplugs the number could change since it is a serial port
 
 Example:
-```./gps_logger /dev/ttyACM0 /home/ubuntu/gps_logger/logs``` 
+```./gps_reader /dev/ttyACM0 /home/ubuntu/gps-system/logs/``` 
 
 ### CAN Listener
 
 When you execute this script you should provide the path of the GPS Logger and also the folder where the logs would be saved.
 
 Example:
-```./can_listener /dev/ttyACM0 /home/ubuntu/gps_logger/logs``` 
+```./can_listener /home/ubuntu/gps-system/gps_reader /home/ubuntu/gps-system/logs/``` 
 
 ## Systemd service for CAN Listener
 

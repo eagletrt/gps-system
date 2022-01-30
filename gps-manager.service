@@ -5,5 +5,6 @@ Description=reading from CAN looking for telemetry messages
 WantedBy=multi-user.target
 
 [Service]
-ExecStart= vcan.sh && /home/ubuntu/gps_logger/can_listener
+ExecStartPre=/home/ubuntu/vcan.sh
+ExecStart=/home/ubuntu/gps_logger/can_listener /home/ubuntu/gps-system/gps_reader /home/ubuntu/gps-system/logs/
 Restart=always
