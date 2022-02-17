@@ -117,12 +117,15 @@ void exitHandler(int sig) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
-        fprintf(stderr, "Usage: ./gps_logger </path/to/port> </path/to/log/folder>\n");
+
+    strcpy(logpath,getcwd(NULL,0));
+    strcat(logpath,"/logs/");
+    
+    if (argc != 2) {
+        fprintf(stderr, "Usage: ./gps_logger </path/to/port>\n");
         return 1;
     } else {
         strcpy(port, argv[1]);
-        strcpy(logpath, argv[2]);
     }
 
     printf("Executing GPS Logger with port %s and log path %s\n", port, logpath);

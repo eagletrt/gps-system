@@ -34,6 +34,7 @@ Example:
 You can also use a service to keep the CAN Listener executing, searching for the activation or idle message, just move it to `/etc/systemd/system` folder, then start it and make it executes on startup if you want
 
 ## TODO
-- [ ] Check actual service on telemetry Pi 
-- [ ] Upload changes on telemetry Pi 
+- [x] Check actual service on telemetry Pi 
+- [x] Upload changes on telemetry Pi 
 - [ ] Print informations on the screen
+- [ ] Update README

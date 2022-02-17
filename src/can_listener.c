@@ -17,20 +17,25 @@
 #define MAX_PATH_LENGTH    100
 #define MAX_DATA_BYTE      8
 #define MAX_ID_BYTE        3
+#define GPS_EXECUTABLE     "gps_reader"
 
 //path exec
 int pid = -1;
 char interface_name[50];  //ttyACMn
 
 int main(int argc, char **argv) {
+
     char log[MAX_PATH_LENGTH];  //gps log path
+    strcpy(log,getcwd(NULL,0));
+    strcat(log,"/logs/");
+
     char gps[MAX_PATH_LENGTH];  //gps script path
+    strcpy(gps,getcwd(NULL,0));
+    strcat(gps,"/");
+    strcat(gps,GPS_EXECUTABLE);
     
-    if (argc == 3) {
-        strcpy(gps, argv[1]);
-        strcpy(log, argv[2]);
-    } else {
-        fprintf(stderr, "Usage: ./can_listener </path/to/gps_logger> </path/to/gps/log/folder>\n");
+    if(argc != 1) {
+        fprintf(stderr, "Usage: ./can_listener\n");
         return 1;
     }
 
