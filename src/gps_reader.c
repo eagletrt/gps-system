@@ -24,7 +24,7 @@ char port[MAX_LENGTH];
 char logpath[MAX_LENGTH];
 int s = -1;
 struct can_frame frame;
-int co = 0;
+char can_port[5];
 
 void setupCan() {
     if (s == -1) {
@@ -37,7 +37,7 @@ void setupCan() {
             exit(2);
         }
 
-        strcpy(ifr.ifr_name, "can2");
+        strcpy(ifr.ifr_name, can_port);
         ioctl(s, SIOCGIFINDEX, &ifr);
 
         addr.can_family  = AF_CAN;
@@ -52,27 +52,17 @@ void setupCan() {
     }
 }
 
-void pos2can(double latitude, double langitude) {
-
-    printf("%lf %lf\n", latitude, langitude);
+void pos2can(float latitude, float langitude) {
+    printf("%.8f,%.8f,0\n", latitude, langitude);
 
     frame.can_id = ID_GPS_COORDS;
 
     uint8_t *buffer_primary_gps_coords      = (uint8_t *)malloc(sizeof(Primary_GPS_COORDS));
-    Primary_GPS_COORDS primary_gps_coords_s = {(float)latitude, (float)langitude};
+    Primary_GPS_COORDS primary_gps_coords_s = {latitude, langitude};
     serialize_Primary_GPS_COORDS(
         buffer_primary_gps_coords, primary_gps_coords_s.latitude, primary_gps_coords_s.longitude);
 
-    frame.data[0] = buffer_primary_gps_coords[0];
-    frame.data[1] = buffer_primary_gps_coords[1];
-    frame.data[2] = buffer_primary_gps_coords[2];
-    frame.data[3] = buffer_primary_gps_coords[3];
-    frame.data[4] = buffer_primary_gps_coords[4];
-    frame.data[5] = buffer_primary_gps_coords[5];
-    frame.data[6] = buffer_primary_gps_coords[6];
-    frame.data[7] = buffer_primary_gps_coords[7];
-
-    // o *frame.data=buffer_primary_gps_coords;
+    memcpy(frame.data, buffer_primary_gps_coords, sizeof(Primary_GPS_COORDS));
 
     free(buffer_primary_gps_coords);
 
@@ -84,22 +74,15 @@ void pos2can(double latitude, double langitude) {
 }
 
 void speed2can(uint16_t speed) {
+    printf("0,0,%d\n", speed);
+
     frame.can_id = ID_GPS_SPEED;
 
     uint8_t *buffer_primary_gps_speed     = (uint8_t *)malloc(sizeof(Primary_GPS_SPEED));
     Primary_GPS_SPEED primary_gps_speed_s = {speed};
     serialize_Primary_GPS_SPEED(buffer_primary_gps_speed, primary_gps_speed_s.speed);
 
-    frame.data[0] = buffer_primary_gps_speed[0];
-    frame.data[1] = buffer_primary_gps_speed[1];
-    frame.data[2] = buffer_primary_gps_speed[2];
-    frame.data[3] = buffer_primary_gps_speed[3];
-    frame.data[4] = buffer_primary_gps_speed[4];
-    frame.data[5] = buffer_primary_gps_speed[5];
-    frame.data[6] = buffer_primary_gps_speed[6];
-    frame.data[7] = buffer_primary_gps_speed[7];
-
-    // o *frame.data=buffer_primary_gps_speed;
+    memcpy(frame.data, buffer_primary_gps_speed, sizeof(Primary_GPS_SPEED));
 
     free(buffer_primary_gps_speed);
 
@@ -118,14 +101,15 @@ void exitHandler(int sig) {
 
 int main(int argc, char **argv) {
 
-    strcpy(logpath,getcwd(NULL,0));
-    strcat(logpath,"/logs/");
-    
-    if (argc != 2) {
-        fprintf(stderr, "Usage: ./gps_logger </path/to/port>\n");
+    strcpy(logpath, getcwd(NULL, 0));
+    strcat(logpath, "/logs/");
+
+    if (argc != 3) {
+        fprintf(stderr, "Usage: ./gps_logger </path/to/port> <can-port>\n");
         return 1;
     } else {
         strcpy(port, argv[1]);
+        strcpy(can_port, argv[2]);
     }
 
     printf("Executing GPS Logger with port %s and log path %s\n", port, logpath);

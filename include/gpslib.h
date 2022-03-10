@@ -11,8 +11,8 @@
 //types
 
 typedef struct {
-	double latitude; //2
-	double longitude; //4
+	float latitude; //2
+	float longitude; //4
 } gps_gga_t;
 
 typedef struct {
@@ -20,14 +20,14 @@ typedef struct {
 } gps_vtg_t;
 
 typedef struct {
-	double latitude; //3
-	double longitude; //5
+	float latitude; //3
+	float longitude; //5
 	uint16_t speed; //7
 } gps_rmc_t;
 
 typedef struct {
-	double latitude; //1
-	double longitude; //3
+	float latitude; //1
+	float longitude; //3
 } gps_gll_t;
 
 typedef union {
@@ -50,7 +50,7 @@ typedef struct {
 } gps_t;
 
 //function declaration
-void pos2can(double latitude, double longitude);
+void pos2can(float latitude, float longitude);
 void speed2can(uint16_t speed);
 void createLogFiles();
 void connect_GPS();
@@ -64,8 +64,8 @@ static bool parseVTG(int index, char *current, bool *stop);
 static bool parseRMC(int index, char* current, bool* stop);
 static bool parseGLL(short index, char* current, bool* stop);
 static void printGPS(char* backup);
-static double convertDegrees(double angle);
-static uint16_t convertSpeed(double decimal);
-static void csv_log(double latitude, double longitude, uint16_t speed);
+static float convertDegrees(float angle);
+static uint16_t convertSpeed(float decimal);
+static void csv_log(float latitude, float longitude, uint16_t speed);
 
 #endif

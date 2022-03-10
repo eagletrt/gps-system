@@ -19,7 +19,6 @@ extern FILE *fs;
 extern gps_t *gps;
 extern char port[MAX_LENGTH];
 extern char logpath[MAX_LENGTH];
-extern int co;
 
 // create log files
 void createLogFiles()
@@ -166,12 +165,12 @@ static void parseLine(char *line)
                 break;
             case 2:
                 csv_log(0, 0, gps->message->vtg.speed);
-                // speed2can(gps->message->vtg.speed);
+                speed2can(gps->message->vtg.speed);
                 break;
             case 3:
                 csv_log(gps->message->rmc.latitude, gps->message->rmc.longitude, gps->message->rmc.speed);
                 pos2can(gps->message->rmc.latitude, gps->message->rmc.longitude);
-                // speed2can(gps->message->rmc.speed);
+                speed2can(gps->message->rmc.speed);
                 break;
             case 4:
                 csv_log(gps->message->gll.latitude, gps->message->gll.longitude, 0);
@@ -319,7 +318,7 @@ static bool parseGLL(short index, char *current, bool *stop)
 }
 
 // log to csv file
-static void csv_log(double latitude, double longitude, uint16_t speed)
+static void csv_log(float latitude, float longitude, uint16_t speed)
 {
     struct timeval unix_time;
     gettimeofday(&unix_time, NULL);
@@ -339,15 +338,15 @@ static void csv_log(double latitude, double longitude, uint16_t speed)
 }
 
 // convert degress minutes to degrees
-static double convertDegrees(double angle)
+static float convertDegrees(float angle)
 {
-    double degrees = floor(angle / 100.0);
-    double minutes = (angle - degrees * 100.0) / 60.0;
+    float degrees = floor(angle / 100.0);
+    float minutes = (angle - degrees * 100.0) / 60.0;
     return degrees + minutes;
 }
 
 // convert knots to km/h*100 to get an integer
-static uint16_t convertSpeed(double decimal)
+static uint16_t convertSpeed(float decimal)
 {
     decimal *= 1.852;
     decimal *= 100;
