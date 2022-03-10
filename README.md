@@ -2,8 +2,6 @@
 
 GPS parser which read raw GPS messages, selects only the valid ones and sends them to CAN bus
 
-##### :warning: Remeber to provide absolute paths as arguments
-
 ## Compiling
 In order to compile it you can just use `cmake` suite
 
@@ -15,26 +13,16 @@ If you want to delete the binaries you can just use the `make clean` command
 
 ### GPS Logger
 
-To execute it you should also provide the port where the GPS is connected and the path to the folder where you want to save the logs
+To execute it you should also provide the port where the GPS is connected and the designated CAN port where the messages will be sent
 
-Usally, the GPS path is `/dev/ttyACM0`, but after some plugs and unplugs the number could change since it is a serial port
+Usally, the GPS path is `/dev/ttyACM0`, but after some plugs and unplugs, the number could change since it is a serial port
 
-Example:
-```./gps_reader /dev/ttyACM0 /home/ubuntu/gps-system/logs/``` 
+Talking about the CAN port, it is provided by the telemetry system
 
-### CAN Listener
-
-When you execute this script you should provide the path of the GPS Logger and also the folder where the logs would be saved.
+If you want to test the GPS parser locally, you can pass an old log file instead of the GPS port and the `vcan0` port, the virtual one, as the CAN port
 
 Example:
-```./can_listener /home/ubuntu/gps-system/gps_reader /home/ubuntu/gps-system/logs/``` 
-
-## Systemd service for CAN Listener
-
-You can also use a service to keep the CAN Listener executing, searching for the activation or idle message, just move it to `/etc/systemd/system` folder, then start it and make it executes on startup if you want
+```./gps_reader /dev/ttyACM0 vcan0``` 
 
 ## TODO
-- [x] Check actual service on telemetry Pi 
-- [x] Upload changes on telemetry Pi 
 - [ ] Print informations on the screen
-- [ ] Update README
